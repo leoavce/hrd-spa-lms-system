@@ -8,15 +8,15 @@
   <!-- 파비콘 (404 방지: 인라인 SVG) -->
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64'%3E%3Crect width='64' height='64' rx='12' fill='%23214e95'/%3E%3Ctext x='50%25' y='54%25' text-anchor='middle' font-size='34' fill='white' font-family='Arial'%3EAK%3C/text%3E%3C/svg%3E"/>
 
-  <!-- 네이비 테마 전용 CSS -->
+  <!-- 라이트(화이트+네이비) 테마 -->
   <link rel="stylesheet" href="./assets/styles.css" />
 
-  <!-- 웹폰트(가독성) -->
+  <!-- 웹폰트 -->
   <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
 
-  <!-- ✅ CSP: Analytics/TagManager 제외, 필요한 Firebase API만 허용 -->
+  <!-- ✅ CSP: 필요한 Firebase만 허용 / 인라인 스크립트 금지 -->
   <meta http-equiv="Content-Security-Policy"
         content="
           default-src 'self';
@@ -34,7 +34,6 @@
           object-src 'none';
           base-uri 'self';
         ">
-
 </head>
 <body>
   <div id="app">
@@ -58,22 +57,18 @@
       </footer>
     </aside>
 
-    <!-- 메인 컨테이너 -->
+    <!-- 메인 -->
     <main class="main">
       <!-- 상단 헤더 -->
       <header class="header">
         <div class="search-wrap">
-          <input id="globalSearch" class="input" type="search" placeholder="검색: 학습하기·러닝·안카데미·공지·IDP" />
-          <button id="searchBtn" class="btn btn-outline">검색</button>
+          <input id="globalSearch" class="input input-lg" type="search" placeholder="검색: 학습하기·러닝·안카데미·공지·IDP (예: Vue, 보안, Nest, HRD)" />
+          <button id="searchBtn" class="btn btn-primary">검색</button>
         </div>
-        <div class="auth-wrap">
-          <span id="identityText" class="identity"></span>
-          <button id="loginBtn" class="btn btn-outline">로그인</button>
-          <button id="logoutBtn" class="btn btn-outline danger hidden">로그아웃</button>
-        </div>
+        <div class="demo-badge" title="데모 모드">DEMO</div>
       </header>
 
-      <!-- 컨텐츠 영역 -->
+      <!-- 컨텐츠 -->
       <section id="viewContainer" class="content"></section>
     </main>
   </div>
@@ -108,41 +103,13 @@
     </form>
   </dialog>
 
-  <!-- 모달: 로그인(이메일/패스워드) -->
-  <dialog id="loginModal" class="modal">
-    <form method="dialog" class="modal-card" id="loginForm">
-      <h3 class="modal-title">로그인(데모)</h3>
-      <p class="muted">데모에서는 로그인 없이도 글 작성 가능. 원하면 이메일/패스워드로 로그인하세요.</p>
-      <label class="field">
-        <span>이메일</span>
-        <input type="email" id="loginEmail" class="input" placeholder="name@example.com">
-      </label>
-      <label class="field">
-        <span>비밀번호</span>
-        <input type="password" id="loginPassword" class="input" placeholder="8~32자">
-      </label>
-      <div class="modal-actions">
-        <button class="btn" value="cancel">닫기</button>
-        <button id="signupBtn" class="btn" value="default" type="button">회원가입</button>
-        <button id="signinBtn" class="btn btn-primary" value="default" type="button">로그인</button>
-      </div>
-    </form>
-  </dialog>
-
   <!-- Toast -->
   <div id="toast" class="toast"></div>
 
-  <!-- Firebase & App -->
+  <!-- 외부 스크립트(인라인 금지) -->
   <script type="module" src="./assets/firebase.js"></script>
   <script type="module" src="./assets/data.js"></script>
   <script type="module" src="./assets/views.js"></script>
-  <script type="module">
-    import { initFirebaseAuth } from "./assets/firebase.js";
-    import { initApp } from "./assets/views.js";
-
-    // 앱 부트스트랩
-    initFirebaseAuth();   // 로그인/로그아웃 버튼 바인딩 및 상태 표시
-    initApp();            // 라우터/뷰 렌더/이벤트 바인딩
-  </script>
+  <script type="module" src="./assets/boot.js"></script>
 </body>
 </html>
