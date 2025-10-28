@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+  <title>AhnLab Knowledge Demo</title>
+
+  <!-- 네이비 테마 전용 CSS -->
+  <link rel="stylesheet" href="./assets/styles.css" />
+
+  <!-- 웹폰트(가독성 개선) - 필요 시 제거 가능 -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+
+  <!-- CSP: 데모 최소 허용(실서비스는 더 엄격하게) -->
+  <!-- github-pages 정적 + firebase sdk 사용 허용 -->
+  <meta http-equiv="Content-Security-Policy"
+        content="default-src 'self';
+                 style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
+                 font-src https://fonts.gstatic.com 'self' data:;
+                 img-src 'self' data: https://firebasestorage.googleapis.com;
+                 script-src 'self' https://www.gstatic.com https://www.googleapis.com;
+                 connect-src https://firestore.googleapis.com https://www.googleapis.com https://www.gstatic.com https://securetoken.googleapis.com;
+                 object-src 'none';
+                 base-uri 'self';
+                 frame-ancestors 'none'">
+
+</head>
+<body>
+  <div id="app">
+    <!-- 좌측 사이드바 -->
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="logo">AKS</div>
+        <div class="brand-title">AhnLab Knowledge</div>
+      </div>
+
+      <nav class="nav">
+        <a class="nav-item" data-route="#home">
+          <span class="icon">🏠</span><span>학습하기</span>
+        </a>
+        <a class="nav-item" data-route="#learning">
+          <span class="icon">📚</span><span>러닝</span>
+        </a>
+        <a class="nav-item" data-route="#anacademy">
+          <span class="icon">📝</span><span>안카데미</span>
+        </a>
+        <a class="nav-item" data-route="#notices">
+          <span class="icon">📢</span><span>공지사항</span>
+        </a>
+        <a class="nav-item" data-route="#idp">
+          <span class="icon">🎯</span><span>IDP · 내 학습</span>
+        </a>
+      </nav>
+
+      <footer class="sidebar-footer">
+        <button id="openComposer" class="btn btn-primary full">새 글 작성</button>
+      </footer>
+    </aside>
+
+    <!-- 메인 컨테이너 -->
+    <main class="main">
+      <!-- 상단 헤더 -->
+      <header class="header">
+        <div class="search-wrap">
+          <input id="globalSearch" class="input" type="search" placeholder="검색: 학습하기·러닝·안카데미·공지·IDP" />
+          <button id="searchBtn" class="btn btn-outline">검색</button>
+        </div>
+        <div class="auth-wrap">
+          <span id="identityText" class="identity"></span>
+          <button id="loginBtn" class="btn btn-outline">로그인</button>
+          <button id="logoutBtn" class="btn btn-outline danger hidden">로그아웃</button>
+        </div>
+      </header>
+
+      <!-- 컨텐츠 영역 -->
+      <section id="viewContainer" class="content"></section>
+    </main>
+  </div>
+
+  <!-- 모달: 글 작성 -->
+  <dialog id="composerModal" class="modal">
+    <form method="dialog" class="modal-card" id="composerForm">
+      <h3 class="modal-title">새 글 작성</h3>
+      <label class="field">
+        <span>제목</span>
+        <input type="text" id="postTitle" class="input" placeholder="제목을 입력하세요" maxlength="100" required>
+      </label>
+      <label class="field">
+        <span>본문</span>
+        <textarea id="postBody" class="textarea" placeholder="자유롭게 공유해요 (목록/콜아웃/코드 등 텍스트 기반)" rows="6" maxlength="3000" required></textarea>
+      </label>
+      <div class="row">
+        <label class="field flex-1">
+          <span>태그(쉼표로 구분)</span>
+          <input type="text" id="postTags" class="input" placeholder="ex) vue, nest, hr, security">
+        </label>
+        <label class="field toggle-field">
+          <input id="postToLearning" type="checkbox" />
+          <span>러닝 항목으로도 등록</span>
+        </label>
+      </div>
+
+      <div class="modal-actions">
+        <button class="btn" value="cancel">취소</button>
+        <button id="submitPostBtn" class="btn btn-primary" value="default">게시</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- 모달: 로그인(이메일/패스워드) -->
+  <dialog id="loginModal" class="modal">
+    <form method="dialog" class="modal-card" id="loginForm">
+      <h3 class="modal-title">로그인(데모)</h3>
+      <p class="muted">데모에서는 로그인 없이도 글 작성 가능. 원하면 이메일/패스워드로 로그인하세요.</p>
+      <label class="field">
+        <span>이메일</span>
+        <input type="email" id="loginEmail" class="input" placeholder="name@example.com">
+      </label>
+      <label class="field">
+        <span>비밀번호</span>
+        <input type="password" id="loginPassword" class="input" placeholder="8~32자">
+      </label>
+      <div class="modal-actions">
+        <button class="btn" value="cancel">닫기</button>
+        <button id="signupBtn" class="btn" value="default" type="button">회원가입</button>
+        <button id="signinBtn" class="btn btn-primary" value="default" type="button">로그인</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- Toast -->
+  <div id="toast" class="toast"></div>
+
+  <!-- Firebase 초기화 & 앱 스크립트 -->
+  <script type="module" src="./assets/firebase.js"></script>
+  <script type="module" src="./assets/app.js"></script>
+</body>
+</html>
