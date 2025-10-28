@@ -1,5 +1,4 @@
-// 화면/라우팅/이벤트 모듈
-import { auth, onAuthStateChanged } from "./firebase.js";
+// 화면/라우팅/이벤트 모듈 (로그인 제거, 데모 모드)
 import { COL, listDocs, createDoc, updateField, removeDoc, tokensFromText, escapeHtml, currentIdentity } from "./data.js";
 
 /* ------------------------------
@@ -61,7 +60,7 @@ async function globalSearchRun(keyword){
   const q = (keyword||"").trim().toLowerCase();
   if(!q) { showToast("검색어를 입력하세요"); return; }
 
-  const size = 40;
+  const size = 80;
   const [posts, learning, ana, notices, idp] = await Promise.all([
     listDocs(COL.POSTS, { lim:size }),
     listDocs(COL.LEARNING, { lim:size }),
@@ -79,11 +78,11 @@ async function globalSearchRun(keyword){
   };
 
   const results = [
-    ...posts.filter(hit).map(r=>({...r, __col:COL.POSTS})),
-    ...learning.filter(hit).map(r=>({...r, __col:COL.LEARNING})),
-    ...ana.filter(hit).map(r=>({...r, __col:COL.ANACADEMY})),
-    ...notices.filter(hit).map(r=>({...r, __col:COL.NOTICES})),
-    ...idp.filter(hit).map(r=>({...r, __col:COL.IDP})),
+    ...posts.filter(hit).map(r=>({...r, __col:"학습하기"})),
+    ...learning.filter(hit).map(r=>({...r, __col:"러닝"})),
+    ...ana.filter(hit).map(r=>({...r, __col:"안카데미"})),
+    ...notices.filter(hit).map(r=>({...r, __col:"공지"})),
+    ...idp.filter(hit).map(r=>({...r, __col:"IDP"})),
   ].slice(0,80);
 
   renderSearchResults(keyword, results);
@@ -92,7 +91,7 @@ searchBtn.addEventListener("click", ()=> globalSearchRun(globalSearch.value));
 globalSearch.addEventListener("keydown", (e)=>{ if(e.key==="Enter") globalSearchRun(globalSearch.value); });
 
 /* ------------------------------
-   뷰 렌더
+   초기화
 ------------------------------ */
 export async function initApp(){
   // 단축키
@@ -106,9 +105,6 @@ export async function initApp(){
   openComposer.addEventListener("click", ()=> composerModal.showModal());
   composerForm.addEventListener("submit", (e)=> e.preventDefault());
   submitPostBtn.addEventListener("click", onSubmitCompose);
-
-  // 사용자 이메일 유지(내 학습 소유자 표시에 활용)
-  onAuthStateChanged(auth, (user)=> { window.__AKS_USER_EMAIL = user?.email || ""; });
 
   // 최초 라우트
   ensureRoute();
@@ -149,7 +145,7 @@ function postCard(p){
         <div>
           <div class="card-title">${escapeHtml(p.title||"(제목없음)")}</div>
           <div class="card-meta">
-            작성자: ${escapeHtml(p.authorName||p.authorEmail||"알수없음")} · ${fmt(p.createdAt)}
+            작성자: ${escapeHtml(p.authorName||"게스트")} · ${fmt(p.createdAt)}
             ${p.tags?.length? ` · 태그: ${p.tags.map(t=>`<span class="badge">${escapeHtml(t)}</span>`).join(" ")}`:""}
           </div>
         </div>
@@ -203,7 +199,7 @@ async function onSubmitCompose(e){
 
   const authorName = currentIdentity();
   const base = {
-    title, body, tags, authorName, authorEmail: window.__AKS_USER_EMAIL || null,
+    title, body, tags, authorName,
     searchTokens: Array.from(new Set([...tokensFromText(title), ...tokensFromText(body), ...tags.map(t=>t.toLowerCase())]))
   };
 
@@ -351,7 +347,7 @@ function logCard(l){
       <div class="row" style="justify-content:space-between">
         <div>
           <div class="card-title">${escapeHtml(l.title||"학습 메모")}</div>
-          <div class="card-meta">${fmt(l.createdAt)} · 작성자: ${escapeHtml(l.authorName||l.authorEmail||"게스트")}</div>
+          <div class="card-meta">${fmt(l.createdAt)} · 작성자: ${escapeHtml(l.authorName||"게스트")}</div>
         </div>
         <div class="row">
           <button class="btn" data-action="edit" data-id="${l.id}">편집</button>
@@ -413,7 +409,7 @@ async function renderNotices(){
         <div class="row" style="justify-content:space-between">
           <div>
             <div class="card-title">${escapeHtml(n.title||"(제목없음)")}</div>
-            <div class="card-meta">${fmt(n.createdAt)} · 등록자: ${escapeHtml(n.authorName||n.authorEmail||"")}</div>
+            <div class="card-meta">${fmt(n.createdAt)} · 등록자: ${escapeHtml(n.authorName||"")}</div>
           </div>
           <div class="row">
             <button class="btn" data-action="edit" data-id="${n.id}">편집</button>
@@ -463,10 +459,9 @@ async function openNoticeEdit(n){
 
 /* ===== IDP / 내 학습 ===== */
 async function renderIDP(){
-  // 데모 권한: 전체 공개 규칙 사용 권장. (README 참조)
   const [catalog, my] = await Promise.all([
     listDocs(COL.IDP, { lim:30 }),
-    listDocs(COL.MYLEARN, { lim:50 /*rules 전면허용이면 필터 없이*/ }).catch(()=>[])
+    listDocs(COL.MYLEARN, { lim:50 }).catch(()=>[])
   ]);
   const html = /*html*/`
     <div class="grid grid-2">
@@ -603,4 +598,4 @@ function renderSearchResults(keyword, list){
   viewContainer.innerHTML = html;
 }
 
-export { ensureRoute }; // 필요 시 외부에서 호출할 수 있도록
+export { ensureRoute };
