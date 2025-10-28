@@ -5,26 +5,35 @@
   <meta name="viewport" content="width=device-width,initial-scale=1.0" />
   <title>AhnLab Knowledge Demo</title>
 
+  <!-- 파비콘 (404 방지: 인라인 SVG) -->
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64'%3E%3Crect width='64' height='64' rx='12' fill='%23214e95'/%3E%3Ctext x='50%25' y='54%25' text-anchor='middle' font-size='34' fill='white' font-family='Arial'%3EAK%3C/text%3E%3C/svg%3E"/>
+
   <!-- 네이비 테마 전용 CSS -->
   <link rel="stylesheet" href="./assets/styles.css" />
 
-  <!-- 웹폰트(가독성 개선) - 필요 시 제거 가능 -->
+  <!-- 웹폰트(가독성) -->
   <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
 
-  <!-- CSP: 데모 최소 허용(실서비스는 더 엄격하게) -->
-  <!-- github-pages 정적 + firebase sdk 사용 허용 -->
+  <!-- ✅ CSP: Analytics/TagManager 제외, 필요한 Firebase API만 허용 -->
   <meta http-equiv="Content-Security-Policy"
-        content="default-src 'self';
-                 style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
-                 font-src https://fonts.gstatic.com 'self' data:;
-                 img-src 'self' data: https://firebasestorage.googleapis.com;
-                 script-src 'self' https://www.gstatic.com https://www.googleapis.com;
-                 connect-src https://firestore.googleapis.com https://www.googleapis.com https://www.gstatic.com https://securetoken.googleapis.com;
-                 object-src 'none';
-                 base-uri 'self';
-                 frame-ancestors 'none'">
+        content="
+          default-src 'self';
+          style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
+          font-src https://fonts.gstatic.com 'self' data:;
+          img-src 'self' data: https://firebasestorage.googleapis.com;
+          script-src 'self' https://www.gstatic.com https://www.googleapis.com;
+          connect-src 'self'
+                      https://firestore.googleapis.com
+                      https://www.googleapis.com
+                      https://www.gstatic.com
+                      https://securetoken.googleapis.com
+                      https://identitytoolkit.googleapis.com
+                      https://firebaseinstallations.googleapis.com;
+          object-src 'none';
+          base-uri 'self';
+        ">
 
 </head>
 <body>
@@ -37,21 +46,11 @@
       </div>
 
       <nav class="nav">
-        <a class="nav-item" data-route="#home">
-          <span class="icon">🏠</span><span>학습하기</span>
-        </a>
-        <a class="nav-item" data-route="#learning">
-          <span class="icon">📚</span><span>러닝</span>
-        </a>
-        <a class="nav-item" data-route="#anacademy">
-          <span class="icon">📝</span><span>안카데미</span>
-        </a>
-        <a class="nav-item" data-route="#notices">
-          <span class="icon">📢</span><span>공지사항</span>
-        </a>
-        <a class="nav-item" data-route="#idp">
-          <span class="icon">🎯</span><span>IDP · 내 학습</span>
-        </a>
+        <a class="nav-item" data-route="#home"><span class="icon">🏠</span><span>학습하기</span></a>
+        <a class="nav-item" data-route="#learning"><span class="icon">📚</span><span>러닝</span></a>
+        <a class="nav-item" data-route="#anacademy"><span class="icon">📝</span><span>안카데미</span></a>
+        <a class="nav-item" data-route="#notices"><span class="icon">📢</span><span>공지사항</span></a>
+        <a class="nav-item" data-route="#idp"><span class="icon">🎯</span><span>IDP · 내 학습</span></a>
       </nav>
 
       <footer class="sidebar-footer">
@@ -89,7 +88,7 @@
       </label>
       <label class="field">
         <span>본문</span>
-        <textarea id="postBody" class="textarea" placeholder="자유롭게 공유해요 (목록/콜아웃/코드 등 텍스트 기반)" rows="6" maxlength="3000" required></textarea>
+        <textarea id="postBody" class="textarea" placeholder="자유롭게 공유해요 (텍스트 기반)" rows="6" maxlength="3000" required></textarea>
       </label>
       <div class="row">
         <label class="field flex-1">
@@ -133,8 +132,17 @@
   <!-- Toast -->
   <div id="toast" class="toast"></div>
 
-  <!-- Firebase 초기화 & 앱 스크립트 -->
+  <!-- Firebase & App -->
   <script type="module" src="./assets/firebase.js"></script>
-  <script type="module" src="./assets/app.js"></script>
+  <script type="module" src="./assets/data.js"></script>
+  <script type="module" src="./assets/views.js"></script>
+  <script type="module">
+    import { initFirebaseAuth } from "./assets/firebase.js";
+    import { initApp } from "./assets/views.js";
+
+    // 앱 부트스트랩
+    initFirebaseAuth();   // 로그인/로그아웃 버튼 바인딩 및 상태 표시
+    initApp();            // 라우터/뷰 렌더/이벤트 바인딩
+  </script>
 </body>
 </html>
