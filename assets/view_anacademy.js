@@ -1,4 +1,7 @@
-import { COL, listDocs, createDoc, updateField, removeDoc, escapeHtml, tokensFromText, currentIdentity } from "./data.js";
+import {
+  COL, listDocs, createDoc, updateField, removeDoc,
+  escapeHtml, tokensFromText, currentIdentity
+} from "./data.js";
 
 const viewContainer = document.getElementById("viewContainer");
 
@@ -14,14 +17,13 @@ export async function renderAnacademy(){
     <section class="card pinned">
       <div class="row" style="justify-content:space-between; align-items:center">
         <h3 class="card-title">🆕 최신 러닝 로그</h3>
-        <!-- 시각 강도 낮춤: btn-quiet -->
         <button class="btn-quiet" id="btn-new-log">새 로그</button>
       </div>
       ${latest? `
         <article class="card" style="box-shadow:none">
           <div class="row" style="justify-content:space-between">
             <div class="card-title">${escapeHtml(latest.title||"")}</div>
-            <span class="card-meta">${new Date(latest.createdAt?.toDate?.()||latest.createdAt||Date.now()).toLocaleString("ko-KR",{hour12:false})}</span>
+            <span class="card-meta">${new Date((latest.createdAt && latest.createdAt.toDate && latest.createdAt.toDate()) || latest.createdAt || Date.now()).toLocaleString("ko-KR",{hour12:false})}</span>
           </div>
           <div style="white-space:pre-wrap">${escapeHtml(latest.note||"")}</div>
           ${latest.tags?.length? `<div class="card-actions" style="margin-top:6px">${latest.tags.map(t=>`<span class="badge">${escapeHtml(t)}</span>`).join(" ")}</div>`:""}
@@ -39,15 +41,59 @@ export async function renderAnacademy(){
               ${groups.map(g=>`<option value="${escapeHtml(g.id)}">${escapeHtml(g.name||"(이름없음)")}</option>`).join("")}
             </select>
           </label>
-          <button class="btn-quiet" id="btn-new-group">조직 생성</button>
         </div>
-        <span class="badge">블로그형 목록</span>
+        <!-- 조직 생성 버튼: 아웃라인 스타일 + 아이콘 -->
+        <button class="btn btn-outline" id="btn-new-group" title="학습조직 만들기">➕ 조직 생성</button>
       </div>
 
-      <!-- 블로그형: 제목 클릭 -> 본문 펼침, 요약/메타/태그 칩 -->
+      <!-- 블로그형: 제목 클릭 -> 본문 펼침 -->
       <div id="log-list" class="grid" style="margin-top:8px"></div>
     </section>
   `;
+
+  // 동적 모달 생성 (인덱스 수정 없이)
+  function openGroupModal(){
+    const dlg = document.createElement("dialog");
+    dlg.className = "modal";
+    dlg.innerHTML = `
+      <form method="dialog" class="modal-card" id="groupForm">
+        <h3 class="modal-title">새 학습조직 만들기</h3>
+        <label class="field">
+          <span>조직 이름</span>
+          <input class="input" id="gName" placeholder="예) FE 스터디" required maxlength="50">
+        </label>
+        <label class="field">
+          <span>설명(선택)</span>
+          <textarea class="textarea" id="gDesc" rows="3" maxlength="300" placeholder="조직 목적/운영 방침 등"></textarea>
+        </label>
+        <label class="field">
+          <span>테마</span>
+          <select class="input" id="gTheme">
+            <option value="card">카드형(기본)</option>
+            <option value="minimal">미니멀(여백 중심)</option>
+          </select>
+        </label>
+        <div class="modal-actions">
+          <button class="btn" value="cancel">취소</button>
+          <button class="btn btn-primary" id="gSubmit" value="default">생성</button>
+        </div>
+      </form>
+    `;
+    document.body.appendChild(dlg);
+    dlg.showModal();
+
+    dlg.querySelector("#gSubmit").addEventListener("click", async (e)=>{
+      e.preventDefault();
+      const name = dlg.querySelector("#gName").value.trim();
+      if(!name){ return; }
+      const desc = dlg.querySelector("#gDesc").value.trim();
+      const theme = dlg.querySelector("#gTheme").value;
+      const id = `g-${Math.random().toString(36).slice(2,8)}`;
+      await createDoc(COL.GROUPS, { id, name, desc, theme });
+      dlg.close(); document.body.removeChild(dlg);
+      renderAnacademy();
+    });
+  }
 
   const sel = document.getElementById("sel-group");
   const listEl = document.getElementById("log-list");
@@ -55,12 +101,12 @@ export async function renderAnacademy(){
   function renderList(groupId){
     const filtered = groupId? logs.filter(l=> l.groupId===groupId) : logs;
     listEl.innerHTML = filtered.length? filtered.map(l=>{
-      const created = new Date(l.createdAt?.toDate?.()||l.createdAt||Date.now()).toLocaleString("ko-KR",{hour12:false});
+      const created = new Date((l.createdAt && l.createdAt.toDate && l.createdAt.toDate()) || l.createdAt || Date.now()).toLocaleString("ko-KR",{hour12:false});
       const excerpt = (l.note||"").slice(0,140);
+      const layoutClass = "card"; // 향후 group.theme에 따라 선택 가능
       return `
-        <article class="card" id="log-${l.id}">
+        <article class="${layoutClass}" id="log-${l.id}">
           <div class="row" style="justify-content:space-between; align-items:center">
-            <!-- 제목은 버튼처럼 보이되 링크 느낌(quiet) -->
             <button class="btn-quiet" data-action="toggle" data-id="${l.id}" style="font-weight:700; padding:0; border:none">${escapeHtml(l.title||"(제목없음)")}</button>
             <div class="row">
               <span class="card-meta">${created} · ${escapeHtml(l.authorName||"게스트")}</span>
@@ -117,12 +163,5 @@ export async function renderAnacademy(){
     renderAnacademy();
   });
 
-  document.getElementById("btn-new-group").addEventListener("click", async ()=>{
-    const name = prompt("조직 이름"); if(!name) return;
-    const desc = prompt("설명(선택)")||"";
-    const id = `g-${Math.random().toString(36).slice(2,8)}`;
-    await createDoc(COL.GROUPS, { id, name, desc });
-    alert("조직이 생성되었습니다");
-    renderAnacademy();
-  });
+  document.getElementById("btn-new-group").addEventListener("click", openGroupModal);
 }
