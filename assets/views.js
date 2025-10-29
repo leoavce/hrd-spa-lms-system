@@ -4,24 +4,28 @@ import { renderLearning } from "./view_learning.js";
 import { renderAnacademy } from "./view_anacademy.js";
 import { renderIDP } from "./view_idp.js";
 
-/* Elements */
 const viewContainer = document.getElementById("viewContainer");
 const globalSearch = document.getElementById("globalSearch");
 const searchBtn = document.getElementById("searchBtn");
 
-/* Router */
 const routes = ["#home", "#learning", "#anacademy", "#idp"];
 function setActiveNav(hash){
   document.querySelectorAll(".nav-item").forEach(a=>{
     a.classList.toggle("active", a.getAttribute("data-route")===hash);
   });
 }
+
 export async function ensureRoute(){
   if(!routes.includes(location.hash)) location.hash = "#home";
   setActiveNav(location.hash);
-  await render(location.hash);
+  try {
+    await render(location.hash);
+  } catch (e) {
+    console.error("Render error:", e);
+    viewContainer.innerHTML =
+      '<div class="empty">화면을 불러오는 중 문제가 발생했습니다.<br>잠시 후 다시 시도해 주세요.</div>';
+  }
 
-  // 🔗 data-anchor 지원: 공지사항 버튼 클릭 시 상단 고정 공지로 스크롤
   const anchor = sessionStorage.getItem("aks_anchor_once");
   if(anchor && location.hash==="#home"){
     const el = document.getElementById(anchor);
@@ -31,7 +35,6 @@ export async function ensureRoute(){
 }
 window.addEventListener("hashchange", ensureRoute);
 
-// 네비게이션 클릭(앵커 지원)
 document.querySelectorAll(".nav-item").forEach(a=>{
   a.addEventListener("click",(e)=>{
     e.preventDefault();
@@ -42,7 +45,6 @@ document.querySelectorAll(".nav-item").forEach(a=>{
   });
 });
 
-/* Search (통합) */
 async function globalSearchRun(keyword){
   const q = (keyword||"").trim().toLowerCase();
   if(!q){ toast("검색어를 입력하세요"); return; }
@@ -83,6 +85,7 @@ async function globalSearchRun(keyword){
     `).join(""):`<div class="empty">검색 결과가 없습니다.</div>`}
   `;
 }
+
 export function toast(msg, ms=1800){
   const el = document.getElementById("toast");
   el.textContent = msg; el.classList.add("show");
@@ -91,13 +94,10 @@ export function toast(msg, ms=1800){
 searchBtn.addEventListener("click", ()=> globalSearchRun(globalSearch.value));
 globalSearch.addEventListener("keydown",(e)=>{ if(e.key==="Enter") globalSearchRun(globalSearch.value); });
 
-/* Render dispatcher */
 async function render(hash){
   if(hash==="#home") return renderHome();
   if(hash==="#learning") return renderLearning();
   if(hash==="#anacademy") return renderAnacademy();
   if(hash==="#idp") return renderIDP();
 }
-
-/* Hooks */
 registerHomeHooks(toast);
