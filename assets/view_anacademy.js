@@ -14,7 +14,8 @@ export async function renderAnacademy(){
     <section class="card pinned">
       <div class="row" style="justify-content:space-between; align-items:center">
         <h3 class="card-title">🆕 최신 러닝 로그</h3>
-        <button class="btn btn-primary" id="btn-new-log">새 로그</button>
+        <!-- 시각 강도 낮춤: btn-quiet -->
+        <button class="btn-quiet" id="btn-new-log">새 로그</button>
       </div>
       ${latest? `
         <article class="card" style="box-shadow:none">
@@ -23,6 +24,7 @@ export async function renderAnacademy(){
             <span class="card-meta">${new Date(latest.createdAt?.toDate?.()||latest.createdAt||Date.now()).toLocaleString("ko-KR",{hour12:false})}</span>
           </div>
           <div style="white-space:pre-wrap">${escapeHtml(latest.note||"")}</div>
+          ${latest.tags?.length? `<div class="card-actions" style="margin-top:6px">${latest.tags.map(t=>`<span class="badge">${escapeHtml(t)}</span>`).join(" ")}</div>`:""}
         </article>
       `: `<div class="empty">아직 로그가 없습니다. 지금 첫 로그를 작성해보세요.</div>`}
     </section>
@@ -37,11 +39,13 @@ export async function renderAnacademy(){
               ${groups.map(g=>`<option value="${escapeHtml(g.id)}">${escapeHtml(g.name||"(이름없음)")}</option>`).join("")}
             </select>
           </label>
-          <button class="btn" id="btn-new-group">조직 생성</button>
+          <button class="btn-quiet" id="btn-new-group">조직 생성</button>
         </div>
         <span class="badge">블로그형 목록</span>
       </div>
-      <div id="log-list" class="grid" style="margin-top:10px"></div>
+
+      <!-- 블로그형: 제목 클릭 -> 본문 펼침, 요약/메타/태그 칩 -->
+      <div id="log-list" class="grid" style="margin-top:8px"></div>
     </section>
   `;
 
@@ -50,24 +54,26 @@ export async function renderAnacademy(){
 
   function renderList(groupId){
     const filtered = groupId? logs.filter(l=> l.groupId===groupId) : logs;
-    listEl.innerHTML = filtered.length? filtered.map(l=>`
-      <article class="card" id="log-${l.id}">
-        <div class="row" style="justify-content:space-between">
-          <div>
-            <div class="card-title">${escapeHtml(l.title||"")}</div>
-            <div class="card-meta">${new Date(l.createdAt?.toDate?.()||l.createdAt||Date.now()).toLocaleString("ko-KR",{hour12:false})}
-              · 작성자: ${escapeHtml(l.authorName||"게스트")}
-              ${l.tags?.length? ` · ${l.tags.map(t=>`<span class="badge">${escapeHtml(t)}</span>`).join(" ")}`:""}
+    listEl.innerHTML = filtered.length? filtered.map(l=>{
+      const created = new Date(l.createdAt?.toDate?.()||l.createdAt||Date.now()).toLocaleString("ko-KR",{hour12:false});
+      const excerpt = (l.note||"").slice(0,140);
+      return `
+        <article class="card" id="log-${l.id}">
+          <div class="row" style="justify-content:space-between; align-items:center">
+            <!-- 제목은 버튼처럼 보이되 링크 느낌(quiet) -->
+            <button class="btn-quiet" data-action="toggle" data-id="${l.id}" style="font-weight:700; padding:0; border:none">${escapeHtml(l.title||"(제목없음)")}</button>
+            <div class="row">
+              <span class="card-meta">${created} · ${escapeHtml(l.authorName||"게스트")}</span>
+              <button class="btn-quiet" data-action="edit" data-id="${l.id}">편집</button>
+              <button class="btn-quiet danger" data-action="delete" data-id="${l.id}">삭제</button>
             </div>
           </div>
-          <div class="row">
-            <button class="btn" data-action="edit" data-id="${l.id}">편집</button>
-            <button class="btn danger" data-action="delete" data-id="${l.id}">삭제</button>
-          </div>
-        </div>
-        <div style="white-space:pre-wrap; margin-top:8px">${escapeHtml(l.note||"")}</div>
-      </article>
-    `).join("") : `<div class="empty">선택한 조직에 로그가 없습니다.</div>`;
+          <div class="muted" style="margin-top:6px">${escapeHtml(excerpt)}${(l.note||"").length>140?"…":""}</div>
+          ${l.tags?.length? `<div class="card-actions" style="margin-top:6px">${l.tags.map(t=>`<span class="badge">${escapeHtml(t)}</span>`).join(" ")}</div>`:""}
+          <div class="hidden" id="log-body-${l.id}" style="white-space:pre-wrap; margin-top:8px">${escapeHtml(l.note||"")}</div>
+        </article>
+      `;
+    }).join("") : `<div class="empty">선택한 조직에 로그가 없습니다.</div>`;
 
     filtered.forEach(l=> bindLogHandlers(l));
   }
@@ -77,7 +83,10 @@ export async function renderAnacademy(){
     root.querySelectorAll("button[data-action]").forEach(btn=>{
       btn.addEventListener("click", async ()=>{
         const act = btn.getAttribute("data-action");
-        if(act==="delete"){
+        if(act==="toggle"){
+          const body = document.getElementById(`log-body-${l.id}`);
+          body.classList.toggle("hidden");
+        }else if(act==="delete"){
           if(confirm("로그 삭제?")){ await removeDoc(COL.ANACADEMY, l.id); renderAnacademy(); }
         }else if(act==="edit"){
           const t = prompt("제목", l.title||""); if(!t) return;
