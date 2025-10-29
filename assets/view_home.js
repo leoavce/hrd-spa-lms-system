@@ -25,11 +25,12 @@ export async function renderHome(){
     listDocs(COL.POSTS, { lim:30 })
   ]);
 
+  // ⬇ 공지 섹션: 상단 고정 + id="section-notices" (사이드바 앵커 스크롤용)
   const noticeHTML = notices.length? `
-    <section class="card pinned">
+    <section class="card pinned" id="section-notices">
       <div class="row" style="justify-content:space-between; align-items:center">
         <h3 class="card-title">📢 공지사항</h3>
-        <a href="#idp" class="btn">IDP로 이동</a>
+        <!-- 요청에 따라 IDP 이동 버튼 제거 -->
       </div>
       <div class="grid">
         ${notices.map(n=>`
@@ -81,12 +82,12 @@ function postCard(p){
           </div>
         </div>
         <div class="card-toolbar">
-          <button class="btn" data-action="edit" data-id="${p.id}">편집</button>
-          <button class="btn danger" data-action="delete" data-id="${p.id}">삭제</button>
+          <button class="btn-quiet" data-action="edit" data-id="${p.id}">편집</button>
+          <button class="btn-quiet danger" data-action="delete" data-id="${p.id}">삭제</button>
         </div>
       </div>
 
-      <div style="margin-top:10px; white-space:pre-wrap; line-height:1.6">${escapeHtml(p.body||"")}</div>
+      <div style="margin-top:8px; white-space:pre-wrap; line-height:1.6">${escapeHtml(p.body||"")}</div>
 
       <div class="card-actions">
         <button class="toolbar-btn" data-action="like" data-id="${p.id}">❤️ 추천 <span class="toolbar-count">${like}</span></button>
@@ -98,9 +99,9 @@ function postCard(p){
       <div class="comment-box hidden" id="comments-${p.id}">
         <div class="row">
           <input id="cmt-input-${p.id}" class="input flex-1" placeholder="댓글을 입력하세요 (Enter로 등록)" />
-          <button class="btn" data-action="add-comment" data-id="${p.id}">등록</button>
+          <button class="btn-quiet" data-action="add-comment" data-id="${p.id}">등록</button>
         </div>
-        <div id="cmt-list-${p.id}" style="margin-top:10px"></div>
+        <div id="cmt-list-${p.id}" style="margin-top:8px"></div>
       </div>
     </article>
   `;
@@ -192,7 +193,7 @@ function commentItem(c, replies){
       <div style="white-space:pre-wrap">${escapeHtml(c.content||"")}</div>
       <div class="row" style="margin-top:6px">
         <input id="reply-input-${c.id}" class="input flex-1" placeholder="응답 달기 (Enter로 등록)" />
-        <button id="reply-btn-${c.id}" class="btn">응답</button>
+        <button id="reply-btn-${c.id}" class="btn-quiet">응답</button>
       </div>
       ${replies?.length? replies.map(r=>{
         const w = new Date(r.createdAt?.toDate?.()||r.createdAt||Date.now()).toLocaleString("ko-KR",{hour12:false});
