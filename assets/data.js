@@ -1,7 +1,5 @@
-// 데이터/유틸 모듈: Firestore CRUD + 권한 실패 시 로컬스토리지 폴백
-import {
-  db
-} from "./firebase.js";
+// Firestore + LocalStorage 폴백
+import { db } from "./firebase.js";
 import {
   serverTimestamp, collection, doc, addDoc, getDocs, query, orderBy, limit, where,
   updateDoc, deleteDoc
@@ -9,52 +7,80 @@ import {
 
 export const COL = {
   POSTS: "posts",
+  COMMENTS: "comments",
   NOTICES: "notices",
   LEARNING: "learning",
   ANACADEMY: "anacademy",
+  GROUPS: "groups",
   IDP: "idp",
   MYLEARN: "my_learning"
 };
 
-/** 폴백 스토리지 키 */
-const FBK = {
-  [COL.POSTS]: "fbk_posts",
-  [COL.LEARNING]: "fbk_learning",
-  [COL.ANACADEMY]: "fbk_anacademy",
-  [COL.NOTICES]: "fbk_notices",
-  [COL.IDP]: "fbk_idp",
-  [COL.MYLEARN]: "fbk_mylearn",
-};
+// 폴백 키
+const FBK = Object.fromEntries(Object.values(COL).map(c=>[c, `fbk_${c}`]));
 
-/** 초기가 비어있을 때 채워넣을 데모 데이터 */
+// Seed
 const SEED = {
+  [COL.NOTICES]: [
+    { title:"데모 환경 공지", body:"이 환경의 데이터는 테스트용입니다.", authorName:"시스템", createdAt:new Date() },
+    { title:"새 기능 안내", body:"댓글/추천/저장, 조직·강의 UI 추가", authorName:"시스템", createdAt:new Date() },
+  ],
   [COL.POSTS]: [
-    { title:"첫 글: 환영합니다", body:"학습하기(피드)에서 자유롭게 공유해요.", tags:["welcome","guide"], authorName:"데모", createdAt:new Date() },
+    { title:"환영합니다!", body:"학습하기 탭은 트위터처럼 자유롭게 대화하는 공간입니다.", tags:["welcome"], authorName:"데모", likes:3, saves:1, createdAt:new Date() },
   ],
   [COL.LEARNING]: [
-    { title:"Vue 기초", desc:"컴포넌트/반응성/라우팅 기초", category:"FE", level:"입문", tags:["vue","fe"], createdAt:new Date() },
+    { title:"Vue 기초", desc:"컴포넌트/반응성/라우팅 입문", category:"FE", level:"입문", tags:["vue","fe"], createdAt:new Date() },
   ],
   [COL.ANACADEMY]: [
-    { title:"10/28 스터디", note:"컴포넌트 구조 정리", tags:["study"], createdAt:new Date() },
+    { title:"10/28 스터디", note:"러닝 로그 예시입니다.", tags:["study"], groupId:"default", authorName:"홍길동", createdAt:new Date() },
   ],
-  [COL.NOTICES]: [
-    { title:"서비스 데모 공지", body:"내부 데모 환경입니다.", createdAt:new Date() },
+  [COL.GROUPS]: [
+    { id:"default", name:"기본 학습조직", desc:"샘플 그룹", createdAt:new Date() },
   ],
   [COL.IDP]: [
-    { title:"TypeScript 심화", level:"중급", recommend:"일반", desc:"제네릭/타입추론", createdAt:new Date() },
+    { title:"TypeScript 심화", level:"중급", recommend:"일반", desc:"제네릭/타입 추론", createdAt:new Date() },
   ],
+  [COL.COMMENTS]: [],
   [COL.MYLEARN]: [],
 };
 
-/* ---------- 로컬 폴백 헬퍼 ---------- */
+// 외부 강의 카탈로그(러닝 탭 직무→스킬셋) - 데모 상수
+export const EXT_CATALOG = {
+  "프론트엔드": {
+    "Vue": [
+      { title:"Vue 3 완전 정복", provider:"인프런", url:"#", level:"입문~중급", time:"12h" },
+      { title:"컴포지션 API 실전", provider:"인프런", url:"#", level:"중급", time:"6h" }
+    ],
+    "CSS": [
+      { title:"모던 CSS 설계", provider:"인프런", url:"#", level:"입문", time:"4h" }
+    ]
+  },
+  "백엔드": {
+    "NestJS": [
+      { title:"NestJS로 만드는 API 서버", provider:"인프런", url:"#", level:"입문~중급", time:"10h" }
+    ],
+    "DB(PostgreSQL)": [
+      { title:"PostgreSQL 마스터", provider:"인프런", url:"#", level:"중급", time:"8h" }
+    ]
+  },
+  "HR/기획": {
+    "HRD": [
+      { title:"조직 학습 설계", provider:"인프런", url:"#", level:"입문", time:"5h" }
+    ],
+    "데이터분석": [
+      { title:"비개발자를 위한 데이터 분석", provider:"인프런", url:"#", level:"입문", time:"7h" }
+    ]
+  }
+};
+
 function nowISO(){ return new Date().toISOString(); }
 
 function readFallback(col){
   const raw = localStorage.getItem(FBK[col]);
   if(raw) return JSON.parse(raw);
-  // seed 세팅
+  // seed
   const seeded = (SEED[col]||[]).map(x=>({
-    id: crypto.randomUUID(),
+    id: x.id || crypto.randomUUID(),
     ...x,
     createdAt: nowISO(),
     updatedAt: nowISO()
@@ -62,11 +88,9 @@ function readFallback(col){
   localStorage.setItem(FBK[col], JSON.stringify(seeded));
   return seeded;
 }
-function writeFallback(col, rows){
-  localStorage.setItem(FBK[col], JSON.stringify(rows));
-}
+function writeFallback(col, rows){ localStorage.setItem(FBK[col], JSON.stringify(rows)); }
 
-/* ---------- 공통 CRUD ---------- */
+/* -------- 기본 CRUD (권한 실패 시 폴백) -------- */
 export async function createDoc(col, payload){
   try{
     payload.createdAt = serverTimestamp();
@@ -74,7 +98,6 @@ export async function createDoc(col, payload){
     const ref = collection(db, col);
     return await addDoc(ref, payload);
   }catch(e){
-    // 권한/네트워크 실패 → 폴백
     const rows = readFallback(col);
     const row = { id: crypto.randomUUID(), ...payload, createdAt: nowISO(), updatedAt: nowISO() };
     rows.unshift(row);
@@ -90,10 +113,8 @@ export async function listDocs(col, opts={}){
     filters.forEach(f=> q = query(q, where(f[0], f[1], f[2])));
     const snap = await getDocs(q);
     return snap.docs.map(d=>({ id:d.id, ...d.data() }));
-  }catch(e){
-    // 권한/네트워크 실패 → 폴백
+  }catch{
     const rows = readFallback(col);
-    // 간단 정렬
     rows.sort((a,b)=> (b.createdAt||"") > (a.createdAt||"") ? 1 : -1);
     return rows.slice(0, lim);
   }
@@ -103,26 +124,22 @@ export async function updateField(col, id, patch){
   try{
     patch.updatedAt = serverTimestamp();
     await updateDoc(doc(db, col, id), patch);
-  }catch(e){
+  }catch{
     const rows = readFallback(col);
-    const idx = rows.findIndex(r=>r.id===id);
-    if(idx>=0){
-      rows[idx] = { ...rows[idx], ...patch, updatedAt: nowISO() };
-      writeFallback(col, rows);
-    }
+    const i = rows.findIndex(r=>r.id===id);
+    if(i>=0){ rows[i] = { ...rows[i], ...patch, updatedAt: nowISO() }; writeFallback(col, rows); }
   }
 }
 
 export async function removeDoc(col, id){
-  try{
-    await deleteDoc(doc(db, col, id));
-  }catch(e){
+  try{ await deleteDoc(doc(db, col, id)); }
+  catch{
     const rows = readFallback(col).filter(r=>r.id!==id);
     writeFallback(col, rows);
   }
 }
 
-/* ---------- 유틸 ---------- */
+/* -------- 유틸 -------- */
 export function tokensFromText(str=""){
   return Array.from(new Set(
     (str || "").toLowerCase()
@@ -136,8 +153,6 @@ export function escapeHtml(s){
     .replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;")
     .replaceAll('"',"&quot;").replaceAll("'","&#039;");
 }
-
-// 데모 식별자(게스트 별칭)
 export function currentIdentity(){
   let a = localStorage.getItem("aks_demo_alias");
   if(a) return a;
@@ -145,4 +160,33 @@ export function currentIdentity(){
   a = `게스트-${animals[Math.floor(Math.random()*animals.length)]}-${Math.floor(Math.random()*1000)}`;
   localStorage.setItem("aks_demo_alias", a);
   return a;
+}
+
+/* -------- 댓글/추천 헬퍼(폴백 우선) -------- */
+export async function addComment(postId, content, parentId=null){
+  return createDoc(COL.COMMENTS, {
+    postId, content, parentId, authorName: currentIdentity(),
+    searchTokens: tokensFromText(content)
+  });
+}
+export async function listComments(postId){
+  const all = await listDocs(COL.COMMENTS, { lim:200 });
+  return all.filter(c=> c.postId===postId);
+}
+export async function incPostCounter(postId, key){
+  // posts.likes / posts.saves 증가
+  const list = await listDocs(COL.POSTS, { lim:100 });
+  const it = list.find(x=>x.id===postId);
+  if(!it){
+    // 폴백에서만 안전하게 처리
+    const rows = readFallback(COL.POSTS);
+    const idx = rows.findIndex(r=>r.id===postId);
+    if(idx>=0){
+      rows[idx][key] = Math.max(0, (rows[idx][key]||0) + 1);
+      writeFallback(COL.POSTS, rows);
+    }
+    return;
+  }
+  const val = Math.max(0, (it[key]||0)+1);
+  await updateField(COL.POSTS, postId, { [key]: val });
 }
