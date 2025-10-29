@@ -5,6 +5,11 @@ import {
   updateDoc, deleteDoc
 } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 
+/**
+ * 컬렉션 상수
+ * - 기존 COL 구성은 그대로 유지
+ * - 데모용 교육 신청 기능을 위해 TRAININGS / TRAIN_APPS 추가
+ */
 export const COL = {
   POSTS: "posts",
   COMMENTS: "comments",
@@ -13,13 +18,20 @@ export const COL = {
   ANACADEMY: "anacademy",
   GROUPS: "groups",
   IDP: "idp",
-  MYLEARN: "my_learning"
+  MYLEARN: "my_learning",
+  // 데모: 공지 페이지 내 교육 신청
+  TRAININGS: "trainings",
+  TRAIN_APPS: "training_apps",
 };
 
 // 폴백 키
 const FBK = Object.fromEntries(Object.values(COL).map(c=>[c, `fbk_${c}`]));
 
-// Seed
+/**
+ * 초기 Seed 데이터
+ * - 제공해주신 기본 Seed는 보존
+ * - TRAININGS / TRAIN_APPS 추가(교육 더미)
+ */
 const SEED = {
   [COL.NOTICES]: [
     { title:"데모 환경 공지", body:"이 환경의 데이터는 테스트용입니다.", authorName:"시스템", createdAt:new Date() },
@@ -42,6 +54,13 @@ const SEED = {
   ],
   [COL.COMMENTS]: [],
   [COL.MYLEARN]: [],
+
+  // 데모 교육 카탈로그/신청
+  [COL.TRAININGS]: [
+    { title:"보안 코딩 실무", provider:"사내 HRD", schedule:"2025-11-10 14:00", capacity:30, tags:["보안","개발"], url:"#", createdAt:new Date() },
+    { title:"Vue 3 심화 워크숍", provider:"사내 HRD", schedule:"2025-11-17 10:00", capacity:25, tags:["FE","Vue"], url:"#", createdAt:new Date() },
+  ],
+  [COL.TRAIN_APPS]: [],
 };
 
 // 외부 강의 카탈로그(러닝 탭 직무→스킬셋) - 데모 상수
@@ -73,6 +92,8 @@ export const EXT_CATALOG = {
   }
 };
 
+/* ================== 폴백 스토리지 공통 유틸 ================== */
+
 function nowISO(){ return new Date().toISOString(); }
 
 function readFallback(col){
@@ -80,7 +101,7 @@ function readFallback(col){
   if(raw) return JSON.parse(raw);
   // seed
   const seeded = (SEED[col]||[]).map(x=>({
-    id: x.id || crypto.randomUUID(),
+    id: x.id || (crypto?.randomUUID ? crypto.randomUUID() : `${col}-${Math.random().toString(36).slice(2,10)}`),
     ...x,
     createdAt: nowISO(),
     updatedAt: nowISO()
@@ -90,7 +111,12 @@ function readFallback(col){
 }
 function writeFallback(col, rows){ localStorage.setItem(FBK[col], JSON.stringify(rows)); }
 
-/* -------- 기본 CRUD (권한 실패 시 폴백) -------- */
+/* ================== 기본 CRUD (권한 실패 시 폴백) ================== */
+
+/**
+ * 생성
+ * - Firestore 우선, 실패시 LocalStorage 폴백
+ */
 export async function createDoc(col, payload){
   try{
     payload.createdAt = serverTimestamp();
@@ -99,27 +125,42 @@ export async function createDoc(col, payload){
     return await addDoc(ref, payload);
   }catch(e){
     const rows = readFallback(col);
-    const row = { id: crypto.randomUUID(), ...payload, createdAt: nowISO(), updatedAt: nowISO() };
+    const row = { id: (crypto?.randomUUID ? crypto.randomUUID() : `${col}-${Math.random().toString(36).slice(2,10)}`), ...payload, createdAt: nowISO(), updatedAt: nowISO() };
     rows.unshift(row);
     writeFallback(col, rows);
     return { id: row.id, local: true };
   }
 }
 
+/**
+ * 조회
+ * - opts: { order="createdAt", dir="desc", lim=20, filters=[] }
+ * - filters: [[field, op, value], ...]
+ */
 export async function listDocs(col, opts={}){
   const { order="createdAt", dir="desc", lim=20, filters=[] } = opts;
   try{
-    let q = query(collection(db, col), orderBy(order, dir), limit(lim));
-    filters.forEach(f=> q = query(q, where(f[0], f[1], f[2])));
-    const snap = await getDocs(q);
+    let qRef = query(collection(db, col), orderBy(order, dir), limit(lim));
+    filters.forEach(f=> qRef = query(qRef, where(f[0], f[1], f[2])));
+    const snap = await getDocs(qRef);
     return snap.docs.map(d=>({ id:d.id, ...d.data() }));
   }catch{
     const rows = readFallback(col);
-    rows.sort((a,b)=> (b.createdAt||"") > (a.createdAt||"") ? 1 : -1);
+    // 정렬 키 동적 지원
+    const key = order;
+    const sgn = (dir?.toLowerCase?.() === "asc") ? 1 : -1;
+    rows.sort((a,b)=>{
+      const av = a?.[key] ?? "";
+      const bv = b?.[key] ?? "";
+      return (av > bv ? 1 : av < bv ? -1 : 0) * sgn;
+    });
     return rows.slice(0, lim);
   }
 }
 
+/**
+ * 부분 업데이트
+ */
 export async function updateField(col, id, patch){
   try{
     patch.updatedAt = serverTimestamp();
@@ -131,6 +172,9 @@ export async function updateField(col, id, patch){
   }
 }
 
+/**
+ * 삭제
+ */
 export async function removeDoc(col, id){
   try{ await deleteDoc(doc(db, col, id)); }
   catch{
@@ -139,7 +183,8 @@ export async function removeDoc(col, id){
   }
 }
 
-/* -------- 유틸 -------- */
+/* ================== 유틸 ================== */
+
 export function tokensFromText(str=""){
   return Array.from(new Set(
     (str || "").toLowerCase()
@@ -148,11 +193,13 @@ export function tokensFromText(str=""){
       .filter(s=>s.length>=2)
   ));
 }
+
 export function escapeHtml(s){
   return (s??"").toString()
     .replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;")
     .replaceAll('"',"&quot;").replaceAll("'","&#039;");
 }
+
 export function currentIdentity(){
   let a = localStorage.getItem("aks_demo_alias");
   if(a) return a;
@@ -162,17 +209,20 @@ export function currentIdentity(){
   return a;
 }
 
-/* -------- 댓글/추천 헬퍼(폴백 우선) -------- */
+/* ================== 댓글/추천 헬퍼(폴백 우선) ================== */
+
 export async function addComment(postId, content, parentId=null){
   return createDoc(COL.COMMENTS, {
     postId, content, parentId, authorName: currentIdentity(),
     searchTokens: tokensFromText(content)
   });
 }
+
 export async function listComments(postId){
   const all = await listDocs(COL.COMMENTS, { lim:200 });
   return all.filter(c=> c.postId===postId);
 }
+
 export async function incPostCounter(postId, key){
   // posts.likes / posts.saves 증가
   const list = await listDocs(COL.POSTS, { lim:100 });
@@ -189,4 +239,17 @@ export async function incPostCounter(postId, key){
   }
   const val = Math.max(0, (it[key]||0)+1);
   await updateField(COL.POSTS, postId, { [key]: val });
+}
+
+/* ================== 공지 페이지: 교육 신청 데모 ================== */
+
+/**
+ * 교육 신청 (단순 insert)
+ * - 현재 사용자 별 신청 레코드 남김
+ */
+export async function applyTraining(trainingId){
+  const user = currentIdentity();
+  return createDoc(COL.TRAIN_APPS, {
+    trainingId, applicant: user
+  });
 }
