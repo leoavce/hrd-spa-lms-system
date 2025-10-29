@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1.0" />
-  <title>AhnLab LMS Demo</title>
+  <title>AhnLab Knowledge Demo</title>
 
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64'%3E%3Crect width='64' height='64' rx='12' fill='%23214e95'/%3E%3Ctext x='50%25' y='54%25' text-anchor='middle' font-size='34' fill='white' font-family='Arial'%3EAK%3C/text%3E%3C/svg%3E"/>
 
@@ -13,7 +13,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
 
-  <!-- CSP (인라인 스크립트 금지) -->
+  <!-- CSP -->
   <meta http-equiv="Content-Security-Policy"
         content="
           default-src 'self';
@@ -38,12 +38,12 @@
     <aside class="sidebar">
       <div class="brand">
         <div class="logo">AKS</div>
-        <div class="brand-title">AhnLab LMS System</div>
+        <div class="brand-title">AhnLab Knowledge</div>
       </div>
 
       <nav class="nav">
-        <!-- 🔔 공지사항 버튼을 학습하기보다 위에 배치, home으로 이동 + notices 앵커 -->
-        <a class="nav-item" data-route="#home" data-anchor="notices"><span class="icon">🔔</span><span>공지사항</span></a>
+        <!-- 🔔 공지사항을 별도 라우트로 분리 (#notices). 홈 고정 공지와는 별개 -->
+        <a class="nav-item" data-route="#notices"><span class="icon">🔔</span><span>공지사항</span></a>
         <a class="nav-item" data-route="#home"><span class="icon">🏠</span><span>학습하기</span></a>
         <a class="nav-item" data-route="#learning"><span class="icon">📚</span><span>러닝</span></a>
         <a class="nav-item" data-route="#anacademy"><span class="icon">📝</span><span>안카데미</span></a>
@@ -110,6 +110,7 @@
   <script type="module" src="./assets/view_home.js"></script>
   <script type="module" src="./assets/view_learning.js"></script>
   <script type="module" src="./assets/view_anacademy.js"></script>
+  <script type="module" src="./assets/view_notices.js"></script>
   <script type="module" src="./assets/view_idp.js"></script>
   <script type="module" src="./assets/views.js"></script>
   <script type="module" src="./assets/boot.js"></script>
