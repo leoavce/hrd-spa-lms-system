@@ -80,45 +80,58 @@ body{
 .btn.danger{border-color:#ffb3b3; color:#b82222; background:#fff5f5}
 .full{width:100%}
 
+/* 👇 추가: 저키 시각(quiet) 버튼 - 덜 도드라지게 */
+.btn-quiet{
+  background:transparent;
+  color:#1e3a6d;
+  border:1px solid transparent;
+  padding:8px 10px;           /* 기존 10x14 → 8x10로 컴팩트 */
+  border-radius:8px;
+}
+.btn-quiet:hover{
+  background:#eef4ff;
+  border-color:#d7e6ff;
+}
+
 /* Cards / Lists */
 .card{
   background:var(--panel);
   border:1px solid var(--line);
-  border-radius:14px; padding:14px; box-shadow:var(--shadow);
+  border-radius:14px; padding:12px; box-shadow:var(--shadow);  /* padding 14 → 12 */
 }
-.card-title{font-weight:700; margin:2px 0 8px 0; color:#0f2e68}
+.card-title{font-weight:700; margin:0 0 6px 0; color:#0f2e68} /* margin 8 → 6 */
 .card-meta{font-size:12px; color:var(--muted)}
-.card-actions{display:flex; gap:8px; align-items:center; margin-top:10px}
-.card-toolbar{display:flex; gap:8px; align-items:center}
+.card-actions{display:flex; gap:8px; align-items:center; margin-top:8px} /* margin-top 10 → 8 */
+.card-toolbar{display:flex; gap:6px; align-items:center} /* gap 8 → 6 */
 
 /* Grid helpers */
-.grid{display:grid; gap:12px}
+.grid{display:grid; gap:10px} /* gap 12 → 10 */
 .grid-2{grid-template-columns:1fr 1fr}
 .grid-3{grid-template-columns:repeat(3,1fr)}
-.row{display:flex; gap:12px; align-items:center}
+.row{display:flex; gap:10px; align-items:center} /* gap 12 → 10 */
 .flex-1{flex:1}
 
 /* Modal */
 .modal{border:none; padding:0; background:transparent}
 .modal[open]{display:grid; place-items:center}
-.modal-card{width:min(720px,92vw); background:#ffffff; border:1px solid var(--line); border-radius:16px; padding:18px; box-shadow:var(--shadow)}
-.modal-title{margin:0 0 12px 0}
-.field{display:grid; gap:6px; margin-bottom:12px}
-.toggle-field{display:flex; gap:8px; align-items:center; margin-top:18px}
+.modal-card{width:min(720px,92vw); background:#ffffff; border:1px solid var(--line); border-radius:16px; padding:16px; box-shadow:var(--shadow)} /* padding 18 → 16 */
+.modal-title{margin:0 0 10px 0}
+.field{display:grid; gap:6px; margin-bottom:10px}
+.toggle-field{display:flex; gap:8px; align-items:center; margin-top:14px}
 .modal-actions{display:flex; gap:8px; justify-content:flex-end; margin-top:8px}
 .muted{color:var(--muted); font-size:14px}
 
 /* Toast */
 .toast{
   position:fixed; right:16px; bottom:16px; background:#ffffff; border:1px solid var(--line);
-  padding:12px 14px; border-radius:12px; opacity:0; transform:translateY(10px); transition:.25s; pointer-events:none; box-shadow:var(--shadow)
+  padding:10px 12px; border-radius:12px; opacity:0; transform:translateY(10px); transition:.25s; pointer-events:none; box-shadow:var(--shadow) /* padding 12x14 → 10x12 */
 }
 .toast.show{opacity:1; transform:translateY(0)}
 
 /* Tables */
 .table{width:100%; border-collapse:separate; border-spacing:0 8px}
 .table th{font-size:12px; color:#446188; font-weight:700; text-align:left; padding:6px 10px; background:#f5f9ff; border-radius:10px}
-.table td{background:#ffffff; border:1px solid var(--line); padding:10px; border-left:none; border-right:none}
+.table td{background:#ffffff; border:1px solid var(--line); padding:8px; border-left:none; border-right:none} /* padding 10 → 8 */
 .table tr td:first-child{border-left:1px solid var(--line); border-top-left-radius:10px; border-bottom-left-radius:10px}
 .table tr td:last-child{border-right:1px solid var(--line); border-top-right-radius:10px; border-bottom-right-radius:10px}
 
@@ -128,7 +141,7 @@ body{
 .badge.yellow{background:#fff9ec; border-color:#ffe6b8; color:#7a4e00}
 
 /* Empty */
-.empty{border:1px dashed var(--line); border-radius:12px; padding:18px; text-align:center; color:#607a9a}
+.empty{border:1px dashed var(--line); border-radius:12px; padding:16px; text-align:center; color:#607a9a} /* padding 18 → 16 */
 
 /* Search wide */
 .search-wrap{display:flex; gap:10px; flex:1}
@@ -136,7 +149,7 @@ body{
 .search-wide .input{flex:1 1 auto; min-width:720px}
 
 /* Comment thread */
-.comment-box{margin-top:12px; padding-top:10px; border-top:1px dashed var(--line)}
+.comment-box{margin-top:10px; padding-top:8px; border-top:1px dashed var(--line)} /* 여백 소폭 축소 */
 .comment{display:grid; gap:4px; margin:8px 0; padding:8px; border:1px solid var(--line); border-radius:10px; background:#fbfdff}
 .reply{margin-left:24px}
 .toolbar-btn{display:inline-flex; gap:6px; align-items:center; padding:6px 8px; border-radius:8px; border:1px solid var(--line); background:#fff}
@@ -145,3 +158,4 @@ body{
 
 /* Pinned (공지/최신) */
 .pinned{border-left:4px solid var(--primary); padding-left:12px; background:linear-gradient(90deg,#f3f8ff,#ffffff)}
+.hidden{display:none}
