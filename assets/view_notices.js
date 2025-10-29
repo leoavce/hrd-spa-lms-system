@@ -1,6 +1,6 @@
 import {
   COL, listDocs, createDoc, updateField, removeDoc,
-  escapeHtml, tokensFromText, applyTraining, currentIdentity
+  escapeHtml, tokensFromText, currentIdentity
 } from "./data.js";
 
 const viewContainer = document.getElementById("viewContainer");
@@ -114,12 +114,15 @@ export async function renderNotices(){
     });
   });
 
-  // 교육 신청
+  // 교육 신청 (applyTraining import 없이 직접 작성)
   (trainings||[]).forEach(t=>{
     const root = document.getElementById(`training-${t.id}`); if(!root) return;
     root.querySelectorAll("button[data-action='apply']").forEach(btn=>{
       btn.addEventListener("click", async ()=>{
-        await applyTraining(t.id);
+        await createDoc(COL.TRAIN_APPS, {
+          trainingId: t.id,
+          applicant: currentIdentity()
+        });
         alert("신청이 접수되었습니다 (데모)");
       });
     });
