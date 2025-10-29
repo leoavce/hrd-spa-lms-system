@@ -57,8 +57,8 @@ const SEED = {
 
   // 데모 교육 카탈로그/신청
   [COL.TRAININGS]: [
-    { title:"보안 코딩 실무", provider:"사내 HRD", schedule:"2025-11-10 14:00", capacity:30, tags:["보안","개발"], url:"#", createdAt:new Date() },
-    { title:"Vue 3 심화 워크숍", provider:"사내 HRD", schedule:"2025-11-17 10:00", capacity:25, tags:["FE","Vue"], url:"#", createdAt:new Date() },
+    { title:"10월 스픽 신청", provider:"사내 HRD", schedule:"2025-11-10 14:00", capacity:30, tags:["보안","개발"], url:"#", createdAt:new Date() },
+    { title:"인프런 수강 신청 (공지 내용 확인)", provider:"사내 HRD", schedule:"2025-11-17 10:00", capacity:25, tags:["FE","Vue"], url:"#", createdAt:new Date() },
   ],
   [COL.TRAIN_APPS]: [],
 };
