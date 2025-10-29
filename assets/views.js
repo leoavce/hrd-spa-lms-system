@@ -3,12 +3,15 @@ import { renderHome, registerHomeHooks } from "./view_home.js";
 import { renderLearning } from "./view_learning.js";
 import { renderAnacademy } from "./view_anacademy.js";
 import { renderIDP } from "./view_idp.js";
+import { renderNotices } from "./view_notices.js";
 
 const viewContainer = document.getElementById("viewContainer");
 const globalSearch = document.getElementById("globalSearch");
 const searchBtn = document.getElementById("searchBtn");
 
-const routes = ["#home", "#learning", "#anacademy", "#idp"];
+// ✅ 공지사항 별도 라우트 추가
+const routes = ["#home", "#learning", "#anacademy", "#idp", "#notices"];
+
 function setActiveNav(hash){
   document.querySelectorAll(".nav-item").forEach(a=>{
     a.classList.toggle("active", a.getAttribute("data-route")===hash);
@@ -16,6 +19,7 @@ function setActiveNav(hash){
 }
 
 export async function ensureRoute(){
+  // 기본/메인은 학습하기
   if(!routes.includes(location.hash)) location.hash = "#home";
   setActiveNav(location.hash);
   try {
@@ -25,26 +29,19 @@ export async function ensureRoute(){
     viewContainer.innerHTML =
       '<div class="empty">화면을 불러오는 중 문제가 발생했습니다.<br>잠시 후 다시 시도해 주세요.</div>';
   }
-
-  const anchor = sessionStorage.getItem("aks_anchor_once");
-  if(anchor && location.hash==="#home"){
-    const el = document.getElementById(anchor);
-    if(el){ el.scrollIntoView({behavior:"smooth", block:"start"}); }
-    sessionStorage.removeItem("aks_anchor_once");
-  }
 }
 window.addEventListener("hashchange", ensureRoute);
 
+// 네비게이션
 document.querySelectorAll(".nav-item").forEach(a=>{
   a.addEventListener("click",(e)=>{
     e.preventDefault();
     const route = a.getAttribute("data-route");
-    const anchor = a.getAttribute("data-anchor");
-    if(anchor){ sessionStorage.setItem("aks_anchor_once", anchor); }
     location.hash = route;
   });
 });
 
+// 검색
 async function globalSearchRun(keyword){
   const q = (keyword||"").trim().toLowerCase();
   if(!q){ toast("검색어를 입력하세요"); return; }
@@ -99,5 +96,6 @@ async function render(hash){
   if(hash==="#learning") return renderLearning();
   if(hash==="#anacademy") return renderAnacademy();
   if(hash==="#idp") return renderIDP();
+  if(hash==="#notices") return renderNotices();
 }
 registerHomeHooks(toast);
