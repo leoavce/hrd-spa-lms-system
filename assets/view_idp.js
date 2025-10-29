@@ -18,15 +18,16 @@ export async function renderIDP(){
       <article class="card">
         <div class="row" style="justify-content:space-between">
           <h3 class="card-title">🎯 나의 학습 목표</h3>
-          <button class="btn btn-primary" id="btn-add-goal">목표 추가</button>
+          <!-- 버튼 시각 강도 낮춤 -->
+          <button class="btn-quiet" id="btn-add-goal">목표 추가</button>
         </div>
         ${myGoals.length? myGoals.map(g=>`
           <div class="card" id="goal-${g.id}" style="box-shadow:none; margin-top:8px">
             <div class="row" style="justify-content:space-between">
               <div class="card-title">${escapeHtml(g.title||"")}</div>
               <div class="row">
-                <button class="btn" data-action="edit" data-id="${g.id}">편집</button>
-                <button class="btn danger" data-action="remove" data-id="${g.id}">삭제</button>
+                <button class="btn-quiet" data-action="edit" data-id="${g.id}">편집</button>
+                <button class="btn-quiet danger" data-action="remove" data-id="${g.id}">삭제</button>
               </div>
             </div>
             ${g.note? `<div style="white-space:pre-wrap">${escapeHtml(g.note)}</div>`:""}
@@ -47,8 +48,8 @@ export async function renderIDP(){
                 <div class="card-meta">${escapeHtml(m.type||"")} ${m.progress!=null? `· 진행률 ${m.progress}%`:""} · ${new Date(m.createdAt?.toDate?.()||m.createdAt||Date.now()).toLocaleString("ko-KR",{hour12:false})}</div>
               </div>
               <div class="row">
-                ${m.progress!=null? `<button class="btn" data-action="progress" data-id="${m.id}">+10%</button>`:""}
-                <button class="btn danger" data-action="remove" data-id="${m.id}">삭제</button>
+                ${m.progress!=null? `<button class="btn-quiet" data-action="progress" data-id="${m.id}">+10%</button>`:""}
+                <button class="btn-quiet danger" data-action="remove" data-id="${m.id}">삭제</button>
               </div>
             </div>
           </div>
@@ -59,7 +60,8 @@ export async function renderIDP(){
     <section class="card" style="margin-top:8px">
       <div class="row" style="justify-content:space-between; align-items:center">
         <h3 class="card-title">IDP 카탈로그</h3>
-        <button class="btn btn-primary" id="btn-add-idp">IDP 항목 추가</button>
+        <!-- 버튼 시각 강도 낮춤 -->
+        <button class="btn-quiet" id="btn-add-idp">IDP 항목 추가</button>
       </div>
       ${catalog.length? `
         <table class="table">
@@ -71,9 +73,9 @@ export async function renderIDP(){
                 <td>${escapeHtml(x.level||"N/A")}</td>
                 <td>${escapeHtml(x.recommend||"일반")}</td>
                 <td class="row" style="gap:6px; justify-content:flex-end">
-                  <button class="btn" data-action="enroll" data-id="${x.id}">내 학습에 담기</button>
-                  <button class="btn" data-action="edit" data-id="${x.id}">편집</button>
-                  <button class="btn danger" data-action="delete" data-id="${x.id}">삭제</button>
+                  <button class="btn-quiet" data-action="enroll" data-id="${x.id}">내 학습에 담기</button>
+                  <button class="btn-quiet" data-action="edit" data-id="${x.id}">편집</button>
+                  <button class="btn-quiet danger" data-action="delete" data-id="${x.id}">삭제</button>
                 </td>
               </tr>
             `).join("")}
@@ -109,7 +111,7 @@ export async function renderIDP(){
 
   my?.forEach(m=>{
     const root = document.getElementById(`mylearn-${m.id}`); if(!root) return;
-    root.querySelectorAll("button[data-action]").forEach(btn=>{
+    root.querySelectorAll("button[data-action"]).forEach(btn=>{
       btn.addEventListener("click", async ()=>{
         const act = btn.getAttribute("data-action");
         if(act==="remove"){ if(confirm("내 학습에서 삭제?")){ await removeDoc(COL.MYLEARN, m.id); renderIDP(); } }
