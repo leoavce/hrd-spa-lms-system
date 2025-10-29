@@ -16,14 +16,30 @@ function setActiveNav(hash){
     a.classList.toggle("active", a.getAttribute("data-route")===hash);
   });
 }
-export function ensureRoute(){
+export async function ensureRoute(){
   if(!routes.includes(location.hash)) location.hash = "#home";
   setActiveNav(location.hash);
-  render(location.hash);
+  await render(location.hash);
+
+  // 🔗 data-anchor 지원: 공지사항 버튼 클릭 시 상단 고정 공지로 스크롤
+  const anchor = sessionStorage.getItem("aks_anchor_once");
+  if(anchor && location.hash==="#home"){
+    const el = document.getElementById(anchor);
+    if(el){ el.scrollIntoView({behavior:"smooth", block:"start"}); }
+    sessionStorage.removeItem("aks_anchor_once");
+  }
 }
 window.addEventListener("hashchange", ensureRoute);
+
+// 네비게이션 클릭(앵커 지원)
 document.querySelectorAll(".nav-item").forEach(a=>{
-  a.addEventListener("click",(e)=>{e.preventDefault(); location.hash=a.getAttribute("data-route");});
+  a.addEventListener("click",(e)=>{
+    e.preventDefault();
+    const route = a.getAttribute("data-route");
+    const anchor = a.getAttribute("data-anchor");
+    if(anchor){ sessionStorage.setItem("aks_anchor_once", anchor); }
+    location.hash = route;
+  });
 });
 
 /* Search (통합) */
